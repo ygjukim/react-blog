@@ -1,48 +1,57 @@
-let postId = 1;
-
-const posts = [
-  {
-    id: 1,
-    title: '제목',
-    body: '내용',
-  },
-];
+import Post from '../../models/posts.js';
 
 // create a post
 // URL: POST /api/posts
-// BODY: {title, body}
-exports.write = ctx => {
-  const { title, body } = ctx.request.body;
-  postId += 1;
-  const post = { id: postId, title, body };
-  posts.push(post);
-  ctx.body = post;
+// BODY: {title, body, tags}
+export const write = async ctx => {
+  const { title, body, tags } = ctx.request.body;
+  const post = new Post({
+    title,
+    body,
+    tags,
+  });
+
+  try {
+    await post.save();
+    ctx.body = post;
+  } catch (e) {
+    ctx.throw(500, e);
+  }
 };
 
 //  query post list
 // URL: GET /api/posts
-exports.list = ctx => {
-  ctx.body = posts;
+export const list = async ctx => {
+  try {
+    const posts = await Post.find().exec();
+    ctx.body = posts;
+  } catch (e) {
+    ctx.throw(500, e);
+  }
 };
 
 // read a posts
 // URL: GET /api/posts/:id
-exports.read = ctx => {
+export const read = async ctx => {
   const { id } = ctx.params;
-  const post = posts.find(p => p.id.toString() === id);
-  if (!post) {
-    ctx.status = 404;
-    ctx.body = {
-      message: `포스트(id=${id})가 존재하지 않습니다.`,
-    };
-  } else {
-    ctx.body = post;
+  try {
+    const post = await Post.findById(id).exec();
+    if (!post) {
+      ctx.status = 404;
+      ctx.body = {
+        message: `포스트(id=${id})가 존재하지 않습니다.`,
+      };
+    } else {
+      ctx.body = post;
+    }
+  } catch (e) {
+    ctx.throw(500, e);
   }
 };
 
 // delete a post
 // URL: DELETE /api/posts/:id
-exports.remove = ctx => {
+export const remove = ctx => {
   const { id } = ctx.params;
   const index = posts.findIndex(p => p.id.toString() === id);
   if (index === -1) {
@@ -59,7 +68,7 @@ exports.remove = ctx => {
 // replace a posts
 // URL: PUT /api/posts/:id
 // BODY: {title, body}
-exports.replace = ctx => {
+export const replace = ctx => {
   const { id } = ctx.params;
   const { title, body } = ctx.request.body;
   const index = posts.findIndex(p => p.id.toString() === id);
@@ -81,7 +90,7 @@ exports.replace = ctx => {
 // update a posts
 // URL: PATCH /api/posts/:id
 // BODY: {title, body}
-exports.update = ctx => {
+export const update = ctx => {
   const { id } = ctx.params;
   const { title, body } = ctx.request.body;
   const index = posts.findIndex(p => p.id.toString() === id);
